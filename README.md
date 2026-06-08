@@ -310,8 +310,7 @@ OAuth State  →  URLSafeTimedSerializer  →  10-minute expiry
 **Vatsal Makadiya**
 
 [![GitHub](https://img.shields.io/badge/GitHub-makadiyavatsall-181717?style=flat&logo=github)](https://github.com/makadiyavatsall)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat&logo=linkedin)](https://linkedin.com/in/makadiyavatsal)
-
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat&logo=linkedin)](https://www.linkedin.com/in/vatsal-makadiya-149476242/)
 ---
 
 <div align="center">
