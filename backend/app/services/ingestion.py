@@ -16,6 +16,7 @@ from app.core.config import Settings, get_settings
 from app.models.email import Email
 from app.models.sync_job import SyncJob, SyncJobStatus
 from app.services.chunker import EmailChunkerService, get_email_chunker_service
+from app.services.embedder import EmbeddingService
 from app.services.gmail import GmailService, ParsedEmail
 
 logger = logging.getLogger(__name__)
@@ -33,11 +34,12 @@ class SyncJobResult:
     skipped_messages: int
     chunked_messages: int
     total_chunks: int
+    embedded_chunks: int
     error_message: str | None
 
 
 class IngestionService:
-    """Coordinates Gmail fetch, deduplication, email persistence, and chunking."""
+    """Coordinates Gmail fetch, deduplication, email persistence, chunking, and embedding."""
 
     def __init__(
         self,
@@ -50,12 +52,13 @@ class IngestionService:
         self._settings = settings or get_settings()
         self._gmail = GmailService(session, user_id, self._settings)
         self._chunker: EmailChunkerService = get_email_chunker_service(self._settings)
+        self._embedder = EmbeddingService(session, self._settings)
 
     async def run_sync(self) -> SyncJobResult:
         """
         Run a synchronous ingestion job for the authenticated user.
 
-        Gmail fetch → store emails → chunk → set indexed_at.
+        Gmail fetch → store emails → chunk → embed → set indexed_at.
         """
         job = SyncJob(
             user_id=self._user_id,
@@ -70,6 +73,7 @@ class IngestionService:
         skipped_count = 0
         chunked_count = 0
         total_chunks = 0
+        total_embedded = 0
 
         try:
             job.status = SyncJobStatus.RUNNING
@@ -101,6 +105,8 @@ class IngestionService:
                         )
                         chunked_count += 1
                         total_chunks += chunk_count
+                        embedded = await self._embedder.embed_chunks_for_email(email.id)
+                        total_embedded += embedded
                     skipped_count += 1
                 else:
                     parsed = await self._gmail.fetch_parsed_message(gmail_message_id)
@@ -114,6 +120,8 @@ class IngestionService:
                         )
                         chunked_count += 1
                         total_chunks += chunk_count
+                        embedded = await self._embedder.embed_chunks_for_email(email.id)
+                        total_embedded += embedded
                     else:
                         skipped_count += 1
 
@@ -126,12 +134,13 @@ class IngestionService:
             await self._session.commit()
 
             logger.info(
-                "Gmail sync completed job_id=%s stored=%s skipped=%s chunked=%s chunks=%s",
+                "Gmail sync completed job_id=%s stored=%s skipped=%s chunked=%s chunks=%s embedded=%s",
                 job.id,
                 stored_count,
                 skipped_count,
                 chunked_count,
                 total_chunks,
+                total_embedded,
             )
 
         except HTTPException as exc:
@@ -155,6 +164,7 @@ class IngestionService:
             skipped_messages=skipped_count,
             chunked_messages=chunked_count,
             total_chunks=total_chunks,
+            embedded_chunks=total_embedded,
             error_message=job.error_message,
         )
 

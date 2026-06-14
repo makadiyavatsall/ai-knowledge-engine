@@ -20,12 +20,11 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 # Gmail read scope included so stored refresh tokens work for ingestion (Phase 4+).
 GOOGLE_OAUTH_SCOPES = (
     "openid",
-    "email",
     "profile",
     "https://www.googleapis.com/auth/gmail.readonly",
 )
 
-REQUIRED_OAUTH_SCOPES: frozenset[str] = frozenset(["openid", "email", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/gmail.readonly"])
+REQUIRED_OAUTH_SCOPES: frozenset[str] = frozenset(["openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/gmail.readonly"])
 
 
 def _fernet(settings: Settings) -> Fernet:
@@ -81,6 +80,10 @@ def validate_granted_scopes(scope: str | None) -> None:
         )
     granted = set(scope.strip().split())
     missing = REQUIRED_OAUTH_SCOPES - granted
+
+    print("GRANTED:", granted)
+    print("MISSING:", missing)
+
     if missing:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

@@ -1,6 +1,7 @@
 """Chunk model: text segments and vector embeddings for retrieval."""
 
 from __future__ import annotations
+from pgvector.sqlalchemy import Vector
 
 import uuid
 from datetime import datetime
@@ -48,6 +49,11 @@ class Chunk(Base):
         Integer,
         nullable=True,
         comment="Token count (tiktoken cl100k_base) for this chunk payload",
+    )
+    embedding: Mapped[list[float] | None] = mapped_column(
+    	Vector(1536),
+    	nullable=True,
+    	comment="OpenAI embedding vector stored in pgvector",
     )
 
     created_at: Mapped[datetime] = mapped_column(

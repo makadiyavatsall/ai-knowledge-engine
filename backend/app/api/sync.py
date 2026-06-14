@@ -33,6 +33,7 @@ class SyncTriggerResponse(BaseModel):
     skipped_messages: int
     chunked_messages: int = 0
     total_chunks: int = 0
+    embedded_chunks: int = 0
     error_message: str | None = None
 
 
@@ -83,6 +84,7 @@ async def trigger_sync(
         skipped_messages=result.skipped_messages,
         chunked_messages=result.chunked_messages,
         total_chunks=result.total_chunks,
+        embedded_chunks=result.embedded_chunks,
         error_message=result.error_message,
     )
 
